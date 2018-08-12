@@ -35,28 +35,7 @@ func (p *Plan) CreateFormatter() {
 func (p *Plan) MarshalJSON() ([]byte, error) {
   outputDiff := []InstanceDiff{}
   for _, resource := range p.Formatter.Resources {
-    instance := InstanceDiff{
-      Addr: resource.Addr,
-      Action: DiffChangeType(resource.Action),
-      ActionRaw: resource.Action,
-      Tainted: resource.Tainted,
-      Deposed: resource.Deposed,
-    }
-
-    for _, attrib := range resource.Attributes {
-      instance.Attributes = append(instance.Attributes, &AttributeDiff{
-        Path: attrib.Path,
-        Action: DiffChangeType(attrib.Action),
-        ActionRaw: attrib.Action,
-        OldValue: attrib.OldValue,
-        NewValue: attrib.NewValue,
-        NewComputed: attrib.NewComputed,
-        Sensitive: attrib.Sensitive,
-        ForcesNew: attrib.ForcesNew,
-      })
-    }
-
-    outputDiff = append(outputDiff, instance)
+		outputDiff = append(outputDiff, FromInstanceDiff(resource))
   }
 
   return json.Marshal(&struct{
@@ -74,4 +53,20 @@ func (p *Plan) PlanJson() (string, error) {
     return "", err
   }
   return string(output), err
+}
+
+// Retrieve a resource from the plan by path.
+func (p *Plan) GetResource(name string) *InstanceDiff {
+	addr, _ := terraform.ParseResourceAddress(name)
+
+	for _, resource := range p.Formatter.Resources {
+		if ! resource.Addr.Equals(addr) {
+			continue
+		}
+
+		r := FromInstanceDiff(resource)
+		return &r
+	}
+
+	return nil
 }

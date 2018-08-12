@@ -3,6 +3,7 @@ package plan
 import (
   "encoding/json"
   "github.com/hashicorp/terraform/terraform"
+  "github.com/hashicorp/terraform/command/format"
 )
 
 // These all come from https://godoc.org/github.com/hashicorp/terraform/command/format
@@ -32,6 +33,44 @@ type InstanceDiff struct {
 
   Tainted bool
   Deposed bool
+}
+
+func FromInstanceDiff(resource *format.InstanceDiff) InstanceDiff {
+	instance := InstanceDiff{
+		Addr: resource.Addr,
+		Action: DiffChangeType(resource.Action),
+		ActionRaw: resource.Action,
+		Tainted: resource.Tainted,
+		Deposed: resource.Deposed,
+	}
+
+	for _, attrib := range resource.Attributes {
+		instance.Attributes = append(instance.Attributes, &AttributeDiff{
+			Path: attrib.Path,
+			Action: DiffChangeType(attrib.Action),
+			ActionRaw: attrib.Action,
+			OldValue: attrib.OldValue,
+			NewValue: attrib.NewValue,
+			NewComputed: attrib.NewComputed,
+			Sensitive: attrib.Sensitive,
+			ForcesNew: attrib.ForcesNew,
+  	})
+	}
+
+	return instance
+}
+
+// Retrieve an attribute by path from the resource
+func (i *InstanceDiff) GetAttribute(path string) *AttributeDiff {
+	for _, attr := range i.Attributes {
+		if attr.Path != path {
+			continue
+		}
+
+		return attr
+	}
+
+	return nil
 }
 
 type DiffChangeType terraform.DiffChangeType

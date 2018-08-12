@@ -66,3 +66,7 @@ $ go-terraform-plan ./terraform.plan |jq .
   ]
 }
 ```
+
+## As a library
+
+You can also use this as a library. See `plan/plan_test.go` for an example.
